@@ -502,7 +502,7 @@
                 
                 <div class="input-group" style="margin-bottom: 15px;">
                     <label for="poolAddress">Pool Address (WBTC/USDC 0.3%)</label>
-                    <input type="text" id="poolAddress" placeholder="0x..." value="">
+                    <input type="text" id="poolAddress" placeholder="0x..." value="0xB5AD58CBcc1a9DB06A9852b20aEc95FF3ba56F3a">
                 </div>
 
                 <button class="btn-primary" onclick="setUniswapConfig()" style="width: 100%; margin-bottom: 15px;">
@@ -654,6 +654,7 @@
         const VAULT_ADDRESS = "0x844bc19AEB38436131c2b4893f5E0772162F67d6"; // Updated: Correct USDC
         const USDC_ADDRESS = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d"; // Arbitrum Sepolia USDC
         const WBTC_ADDRESS = "0xEf39185d82F3Dd98046107D6Ca9bA2AF77a2B5dF"; // WBTC Mock deployed 15 Nov 2025
+        const POSITION_MANAGER = "0x6b2937Bde17889EDCf8fbD8dE31C3C2a70Bc4d65"; // NFPM testnet (from Uniswap docs)
         const RPC_URL = "https://sepolia-rollup.arbitrum.io/rpc";
         const CHAIN_ID = 421614;
 
@@ -1110,7 +1111,7 @@
                 document.getElementById('poolStatus').textContent = 'Configurando pool...';
                 document.getElementById('poolStatus').style.display = 'block';
 
-                const POSITION_MANAGER = "0x1238536071E1c677A632429e3655c799b22cDA52";
+                const POSITION_MANAGER = "0x6b2937Bde17889EDCf8fbD8dE31C3C2a70Bc4d65";
                 const SWAP_ROUTER = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
 
                 // setUniswapConfig signature: setUniswapConfig(address _pool, address _positionManager, address _swapRouter)
@@ -1169,7 +1170,7 @@
                 document.getElementById('createPoolStatus').textContent = 'Criando pool...';
                 document.getElementById('createPoolStatus').style.display = 'block';
 
-                const POSITION_MANAGER = "0x1238536071E1c677A632429e3655c799b22cDA52";
+                const POSITION_MANAGER = "0x6b2937Bde17889EDCf8fbD8dE31C3C2a70Bc4d65";
                 const nfpmContract = new ethers.Contract(POSITION_MANAGER, NFPM_ABI, signer);
 
                 // Converter preço para sqrtPriceX96
