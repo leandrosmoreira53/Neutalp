@@ -839,10 +839,13 @@
                     return;
                 }
 
-                // Uniswap v3 formula: tick = log(price) / log(1.0001)
-                // For WBTC/USDC: log price in terms of token1/token0
-                const tickLower = Math.round(Math.log(priceLower) / Math.log(1.0001));
-                const tickUpper = Math.round(Math.log(priceUpper) / Math.log(1.0001));
+                // Uniswap v3 formula for price to tick conversion
+                // tick = log_1.0001(price) where price is in terms of token1/token0
+                // For very large prices (like 93000 USDC per WBTC), we need to handle the conversion carefully
+                // Formula: tick = Math.round(Math.log(price) / Math.log(1.0001))
+                // But since prices are very large, we take the reciprocal first
+                const tickLower = Math.round(Math.log(1 / priceLower) / Math.log(1.0001));
+                const tickUpper = Math.round(Math.log(1 / priceUpper) / Math.log(1.0001));
 
                 // Update display
                 document.getElementById('tickLowerDisplay').textContent = tickLower;
@@ -853,6 +856,7 @@
                 document.getElementById('tickUpper').value = tickUpper;
 
                 console.log(`Converted: ${priceLower} - ${priceUpper} to ticks ${tickLower} - ${tickUpper}`);
+                console.log(`Tick calculation: 1/${priceLower} = ${1/priceLower}, log = ${Math.log(1/priceLower)}, tick = ${tickLower}`);
                 
                 document.getElementById('rangeStatus').className = 'status success';
                 document.getElementById('rangeStatus').textContent = `Ticks calculated: ${tickLower} to ${tickUpper}`;
