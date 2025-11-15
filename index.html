@@ -451,6 +451,23 @@
                 <div class="status" id="depositStatus" style="display: none;"></div>
             </div>
 
+            <!-- CONFIGURE POOL SECTION -->
+            <div class="card">
+                <h2>⚙️ Configure Uniswap Pool</h2>
+                <p>Configure the Uniswap v3 pool for WBTC/USDC (required before setting range)</p>
+                
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label for="poolAddress">Pool Address (WBTC/USDC 0.3%)</label>
+                    <input type="text" id="poolAddress" placeholder="0x..." value="">
+                </div>
+
+                <button class="btn-primary" onclick="setUniswapConfig()" style="width: 100%; margin-bottom: 15px;">
+                    Configure Pool
+                </button>
+
+                <div class="status" id="poolStatus" style="display: none;"></div>
+            </div>
+
             <!-- RANGE SECTION -->
             <div class="card">
                 <h2>📈 Set Range</h2>
@@ -610,6 +627,7 @@
             "function deposit(uint256 assets, address receiver) public returns (uint256)",
             "function redeem(uint256 shares, address receiver, address owner) public returns (uint256)",
             "function setRange(int24 tickLower, int24 tickUpper) public",
+            "function setUniswapConfig(address _pool, address _positionManager, address _swapRouter) external",
             "function previewDeposit(uint256 assets) public view returns (uint256)",
             "function previewRedeem(uint256 shares) public view returns (uint256)"
         ];
@@ -620,6 +638,12 @@
             "function approve(address spender, uint256 amount) public returns (bool)",
             "function allowance(address owner, address spender) public view returns (uint256)"
         ];
+
+        const POOL_ADDRESSES = {
+            // WBTC/USDC 0.3% fee pools on Arbitrum Sepolia (if they exist)
+            // You need to verify the actual pool address on the network
+            "wbtc_usdc_0.3": "0x" // To be filled by user
+        };
 
         async function connectWallet() {
             try {
@@ -1000,6 +1024,51 @@
                 document.getElementById('positionStatus').className = 'status error';
                 document.getElementById('positionStatus').textContent = `Erro: ${error.message}`;
                 document.getElementById('positionStatus').style.display = 'block';
+            }
+        }
+
+        async function setUniswapConfig() {
+            try {
+                if (!userAddress) {
+                    alert('Por favor, conecte sua carteira primeiro');
+                    return;
+                }
+
+                const poolAddress = document.getElementById('poolAddress').value.trim();
+                if (!poolAddress.startsWith('0x') || poolAddress.length !== 42) {
+                    alert('Pool address inválido');
+                    return;
+                }
+
+                document.getElementById('poolStatus').className = 'status info';
+                document.getElementById('poolStatus').textContent = 'Configurando pool...';
+                document.getElementById('poolStatus').style.display = 'block';
+
+                const POSITION_MANAGER = "0x1238536071E1c677A632429e3655c799b22cDA52";
+                const SWAP_ROUTER = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
+
+                // setUniswapConfig signature: setUniswapConfig(address _pool, address _positionManager, address _swapRouter)
+                const tx = await vaultContract.setUniswapConfig(poolAddress, POSITION_MANAGER, SWAP_ROUTER);
+                console.log(`Pool config tx: ${tx.hash}`);
+                
+                document.getElementById('poolStatus').className = 'status info';
+                document.getElementById('poolStatus').textContent = `Tx enviada: ${tx.hash.slice(0, 10)}...`;
+                
+                const receipt = await tx.wait();
+
+                if (receipt.status === 1) {
+                    document.getElementById('poolStatus').className = 'status success';
+                    document.getElementById('poolStatus').textContent = `Pool configurado! Hash: ${receipt.hash}`;
+                } else {
+                    document.getElementById('poolStatus').className = 'status error';
+                    document.getElementById('poolStatus').textContent = 'Transação falhou';
+                }
+
+            } catch (error) {
+                console.error('Pool config error:', error);
+                document.getElementById('poolStatus').className = 'status error';
+                document.getElementById('poolStatus').textContent = `Erro: ${error.message}`;
+                document.getElementById('poolStatus').style.display = 'block';
             }
         }
 
