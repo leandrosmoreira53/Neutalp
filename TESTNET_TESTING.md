@@ -148,3 +148,26 @@ npm run test:vault         # Executa na testnet
 - Entry/Exit fees zeradas (requerimento do contrato)
 
 🎉 Bom teste!
+
+---
+
+## 🧪 WBTC (Mock) na Arbitrum Sepolia
+
+Se você precisa de um WBTC de teste (8 decimais) para criar o pool WBTC/USDC:
+
+1) Deploy do token mock via Foundry
+
+```powershell
+$env:SEPOLIA_RPC_URL = "https://sepolia-rollup.arbitrum.io/rpc"
+$env:PRIVATE_KEY = "0xSEU_PK_AQUI"  # NUNCA commit, use variável local/Key Vault
+forge script script/DeployWBTCMock.s.sol:DeployWBTCMockScript --rpc-url $env:SEPOLIA_RPC_URL --broadcast
+```
+
+2) Resultado esperado
+- Console exibirá o endereço do WBTC mock e confirmará mint de 10 WBTC para o deployer.
+- Adicione o token no MetaMask (decimals = 8) para visualizar saldo.
+
+3) Uso
+- Guarde o endereço do WBTC mock para criação do pool WBTC/USDC (fee comum: 3000).
+- Caso não exista um pool Uniswap v3 nesta rede, será necessário criar/inicializar via NonfungiblePositionManager compatível com Arbitrum Sepolia.
+

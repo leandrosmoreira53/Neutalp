@@ -398,6 +398,13 @@
                     <input type="hidden" id="vaultAddr" value="0x6cf5791356EEf878536Ee006f18410861D93198D">
                 </div>
 
+                <div class="info-box">
+                    <div class="info-label">WBTC (Mock) Address</div>
+                    <div class="info-value" id="wbtcDisplay" style="font-size: 0.95em;">Set after deploy</div>
+                    <button class="copy-btn" onclick="copyToClipboard('wbtcAddr')">Copy</button>
+                    <input type="hidden" id="wbtcAddr" value="">
+                </div>
+
                 <div class="info-box" id="totalAssetsBox" style="display: none;">
                     <div class="info-label">Total Assets (USDC)</div>
                     <div class="info-value" id="totalAssets">0.00</div>
@@ -449,6 +456,43 @@
                 </button>
 
                 <div class="status" id="depositStatus" style="display: none;"></div>
+            </div>
+
+            <!-- CREATE POOL SECTION -->
+            <div class="card">
+                <h2>🏗️ Create WBTC/USDC Pool</h2>
+                <p style="margin-bottom: 15px;">If no pool exists, create and initialize one here</p>
+                
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label for="poolToken0">Token 0 (usually USDC)</label>
+                    <input type="text" id="poolToken0" placeholder="0x..." value="0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label for="poolToken1">Token 1 (WBTC - set after deploy)</label>
+                    <input type="text" id="poolToken1" placeholder="0x...">
+                </div>
+
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label for="feeTier">Fee Tier (bps)</label>
+                    <select id="feeTier">
+                        <option value="500">0.05% (500 bps)</option>
+                        <option value="3000" selected>0.3% (3000 bps)</option>
+                        <option value="10000">1% (10000 bps)</option>
+                    </select>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label for="initialPrice">Initial Price (USDC per WBTC)</label>
+                    <input type="number" id="initialPrice" placeholder="100000" value="100000">
+                </div>
+
+                <button class="btn-primary" onclick="createPool()" style="margin-top: 15px; background: #8b5cf6;">
+                    <span id="createPoolText">Create & Initialize Pool</span>
+                    <span class="loader" id="createPoolLoader"></span>
+                </button>
+
+                <div class="status" id="createPoolStatus" style="display: none;"></div>
             </div>
 
             <!-- CONFIGURE POOL SECTION -->
@@ -609,6 +653,7 @@
         // Constants
         const VAULT_ADDRESS = "0x844bc19AEB38436131c2b4893f5E0772162F67d6"; // Updated: Correct USDC
         const USDC_ADDRESS = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d"; // Arbitrum Sepolia USDC
+        const WBTC_ADDRESS = ""; // Set after deploying mock WBTC (8 decimals)
         const RPC_URL = "https://sepolia-rollup.arbitrum.io/rpc";
         const CHAIN_ID = 421614;
 
@@ -639,11 +684,22 @@
             "function allowance(address owner, address spender) public view returns (uint256)"
         ];
 
-        const POOL_ADDRESSES = {
-            // WBTC/USDC 0.3% fee pools on Arbitrum Sepolia (if they exist)
-            // You need to verify the actual pool address on the network
-            "wbtc_usdc_0.3": "0x" // To be filled by user
-        };
+        const NFPM_ABI = [
+            "function createAndInitializePoolIfNecessary(address token0, address token1, uint24 fee, uint160 sqrtPriceX96) external payable returns (address pool)",
+            "function positions(uint256 tokenId) external view returns (uint96 nonce, address operator, address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint128 liquidity, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, uint128 tokensOwed0, uint128 tokensOwed1)",
+            "function mint(tuple(address token0, address token1, uint24 fee, int24 tickLower, int24 tickUpper, uint256 amount0Desired, uint256 amount1Desired, uint256 amount0Min, uint256 amount1Min, address recipient, uint256 deadline) params) external payable returns (uint256 tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)",
+            "function decreaseLiquidity(tuple(uint256 tokenId, uint128 liquidity, uint256 amount0Min, uint256 amount1Min, uint256 deadline) params) external payable returns (uint256 amount0, uint256 amount1)",
+            "function collect(tuple(uint256 tokenId, address recipient, uint128 amount0Max, uint128 amount1Max) params) external payable returns (uint256 amount0, uint256 amount1)",
+            "function burn(uint256 tokenId) external payable"
+        ];
+
+        const POOL_ABI = [
+            "function tickSpacing() external view returns (int24)",
+            "function fee() external view returns (uint24)",
+            "function token0() external view returns (address)",
+            "function token1() external view returns (address)",
+            "function slot0() external view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked)"
+        ];
 
         async function connectWallet() {
             try {
@@ -691,6 +747,16 @@
                 // Initialize contracts
                 vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
                 usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, signer);
+
+                // Populate WBTC display if available
+                try {
+                    if (WBTC_ADDRESS && WBTC_ADDRESS.startsWith('0x') && WBTC_ADDRESS.length === 42) {
+                        document.getElementById('wbtcDisplay').textContent = `${WBTC_ADDRESS.slice(0, 6)}...${WBTC_ADDRESS.slice(-4)}`;
+                        document.getElementById('wbtcAddr').value = WBTC_ADDRESS;
+                    }
+                } catch (e) {
+                    console.warn('WBTC address not set yet');
+                }
 
                 // Update UI
                 document.getElementById('walletAddress').value = userAddress;
@@ -1069,6 +1135,86 @@
                 document.getElementById('poolStatus').className = 'status error';
                 document.getElementById('poolStatus').textContent = `Erro: ${error.message}`;
                 document.getElementById('poolStatus').style.display = 'block';
+            }
+        }
+
+        async function createPool() {
+            try {
+                if (!userAddress) {
+                    alert('Por favor, conecte sua carteira primeiro');
+                    return;
+                }
+
+                const token0 = document.getElementById('poolToken0').value.trim();
+                const token1 = document.getElementById('poolToken1').value.trim();
+                const feeTier = parseInt(document.getElementById('feeTier').value);
+                const initialPrice = parseFloat(document.getElementById('initialPrice').value);
+
+                // Validar inputs
+                if (!token0.startsWith('0x') || token0.length !== 42) {
+                    alert('Token0 address inválido');
+                    return;
+                }
+                if (!token1.startsWith('0x') || token1.length !== 42) {
+                    alert('Token1 address inválido (defina WBTC_ADDRESS primeiro)');
+                    return;
+                }
+                if (isNaN(initialPrice) || initialPrice <= 0) {
+                    alert('Preço inicial inválido');
+                    return;
+                }
+
+                showLoading('createPoolLoader', true);
+                document.getElementById('createPoolStatus').className = 'status info';
+                document.getElementById('createPoolStatus').textContent = 'Criando pool...';
+                document.getElementById('createPoolStatus').style.display = 'block';
+
+                const POSITION_MANAGER = "0x1238536071E1c677A632429e3655c799b22cDA52";
+                const nfpmContract = new ethers.Contract(POSITION_MANAGER, NFPM_ABI, signer);
+
+                // Converter preço para sqrtPriceX96
+                // sqrtPrice = sqrt(price) * 2^96
+                const sqrtPrice = Math.sqrt(initialPrice);
+                const Q96 = Math.pow(2, 96);
+                const sqrtPriceX96 = BigInt(Math.floor(sqrtPrice * Q96));
+
+                console.log(`Creating pool with:`);
+                console.log(`  Token0: ${token0}`);
+                console.log(`  Token1: ${token1}`);
+                console.log(`  Fee: ${feeTier} bps`);
+                console.log(`  Initial Price: ${initialPrice}`);
+                console.log(`  sqrtPriceX96: ${sqrtPriceX96.toString()}`);
+
+                // Chamar createAndInitializePoolIfNecessary
+                const tx = await nfpmContract.createAndInitializePoolIfNecessary(
+                    token0,
+                    token1,
+                    feeTier,
+                    sqrtPriceX96
+                );
+
+                console.log(`Pool creation tx: ${tx.hash}`);
+                document.getElementById('createPoolStatus').textContent = `Tx enviada: ${tx.hash.slice(0, 10)}...`;
+
+                const receipt = await tx.wait();
+
+                if (receipt.status === 1) {
+                    // Extrair endereço do pool do evento PoolCreated
+                    // Para simplificar, pedimos ao usuário copiar da tx
+                    document.getElementById('createPoolStatus').className = 'status success';
+                    document.getElementById('createPoolStatus').textContent = `Pool criado! Hash: ${receipt.hash}. Procure o endereço do pool no Arbiscan (event PoolCreated) e cole na seção "Configure Pool".`;
+                } else {
+                    document.getElementById('createPoolStatus').className = 'status error';
+                    document.getElementById('createPoolStatus').textContent = 'Transação falhou';
+                }
+
+            } catch (error) {
+                console.error('Pool creation error:', error);
+                document.getElementById('createPoolStatus').className = 'status error';
+                document.getElementById('createPoolStatus').textContent = `Erro: ${error.message || JSON.stringify(error)}`;
+                document.getElementById('createPoolStatus').style.display = 'block';
+            } finally {
+                showLoading('createPoolLoader', false);
             }
         }
 
