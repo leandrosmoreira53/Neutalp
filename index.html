@@ -943,29 +943,31 @@
                     return;
                 }
 
+                console.log(`setRange: tickLower=${tickLower}, tickUpper=${tickUpper}`);
+
                 showLoading('rangeLoader', true);
-
                 document.getElementById('rangeStatus').className = 'status info';
-                document.getElementById('rangeStatus').textContent = 'Configurando range...';
+                document.getElementById('rangeStatus').textContent = 'Enviando...';
                 document.getElementById('rangeStatus').style.display = 'block';
-
+                
                 const tx = await vaultContract.setRange(tickLower, tickUpper);
+                console.log(`Tx sent: ${tx.hash}`);
+                
                 const receipt = await tx.wait();
 
-                if (receipt.status === 1) {
+                if (receipt && receipt.status === 1) {
                     document.getElementById('rangeStatus').className = 'status success';
-                    document.getElementById('rangeStatus').textContent = `Range configurado! Hash: ${receipt.hash}`;
+                    document.getElementById('rangeStatus').textContent = `✓ Range configurado!`;
                     document.getElementById('step3').className = 'step completed';
-                    document.getElementById('step4').className = 'step active';
                 } else {
                     document.getElementById('rangeStatus').className = 'status error';
-                    document.getElementById('rangeStatus').textContent = 'Transação falhou';
+                    document.getElementById('rangeStatus').textContent = 'Tx falhou';
                 }
 
             } catch (error) {
-                console.error('Set range error:', error);
+                console.error('setRange error:', error);
                 document.getElementById('rangeStatus').className = 'status error';
-                document.getElementById('rangeStatus').textContent = `Erro: ${error.message}`;
+                document.getElementById('rangeStatus').textContent = `Erro: ${error.message || error.reason || JSON.stringify(error)}`;
                 document.getElementById('rangeStatus').style.display = 'block';
             } finally {
                 showLoading('rangeLoader', false);
