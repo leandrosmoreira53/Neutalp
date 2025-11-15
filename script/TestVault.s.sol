@@ -28,7 +28,7 @@ contract TestVaultScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
 
-        console.log("\n========== TESTE DO VAULT TESTNET ==========\n");
+        console.log("\n========== VAULT TESTNET TEST ==========\n");
         console.log("Deployer:", deployer);
         console.log("Vault Address:", VAULT_ADDRESS);
         console.log("USDC Address:", USDC_ADDRESS);
@@ -38,48 +38,48 @@ contract TestVaultScript is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        // ============ PASSO 1: VER ESTADO INICIAL ============
-        console.log("\n--- PASSO 1: Estado Inicial ---");
+        // ============ STEP 1: CHECK INITIAL STATE ============
+        console.log("\n--- STEP 1: Initial State ---");
         console.log("USDC balance:", usdc.balanceOf(deployer));
         console.log("Vault totalAssets:", vault.totalAssets());
         console.log("Vault totalSupply:", vault.totalSupply());
-        console.log("Meus shares antes:", vault.balanceOf(deployer));
+        console.log("My shares before:", vault.balanceOf(deployer));
 
-        // ============ PASSO 2: APROVAR USDC ============
-        console.log("\n--- PASSO 2: Aprovar USDC para o Vault ---");
+        // ============ STEP 2: APPROVE USDC ============
+        console.log("\n--- STEP 2: Approve USDC for Vault ---");
         usdc.approve(VAULT_ADDRESS, DEPOSIT_AMOUNT);
-        console.log("USDC aprovado: ", DEPOSIT_AMOUNT);
+        console.log("USDC approved: ", DEPOSIT_AMOUNT);
 
-        // ============ PASSO 3: DEPOSITAR USDC ============
-        console.log("\n--- PASSO 3: Depositar USDC no Vault ---");
+        // ============ STEP 3: DEPOSIT USDC ============
+        console.log("\n--- STEP 3: Deposit USDC to Vault ---");
         uint256 sharesMinted = vault.deposit(DEPOSIT_AMOUNT, deployer);
-        console.log("USDC depositado:", DEPOSIT_AMOUNT);
-        console.log("Shares recebidas:", sharesMinted);
+        console.log("USDC deposited:", DEPOSIT_AMOUNT);
+        console.log("Shares received:", sharesMinted);
 
-        // ============ PASSO 4: VER ESTADO PÓS-DEPÓSITO ============
-        console.log("\n--- PASSO 4: Estado Pós-Depósito ---");
+        // ============ STEP 4: CHECK STATE AFTER DEPOSIT ============
+        console.log("\n--- STEP 4: State After Deposit ---");
         console.log("Vault totalAssets:", vault.totalAssets());
         console.log("Vault totalSupply:", vault.totalSupply());
-        console.log("Meus shares agora:", vault.balanceOf(deployer));
+        console.log("My shares now:", vault.balanceOf(deployer));
         console.log("Preview redeem (1 share):", vault.previewRedeem(1e18));
 
-        // ============ PASSO 5: DEFINIR RANGE ============
-        console.log("\n--- PASSO 5: Definir Range para a Posição ---");
-        // Range típico para BTC: 
-        // Ticks negativos = preço mais baixo
-        // Ticks positivos = preço mais alto
-        int24 tickLower = -887000;  // Range inferior (preço mais baixo)
-        int24 tickUpper = -882000;  // Range superior (preço mais alto)
+        // ============ STEP 5: SET RANGE ============
+        console.log("\n--- STEP 5: Set Range for Position ---");
+        // Typical range for BTC:
+        // Negative ticks = lower price
+        // Positive ticks = higher price
+        int24 tickLower = -887000;  // Range lower (lower price)
+        int24 tickUpper = -882000;  // Range upper (higher price)
         vault.setRange(tickLower, tickUpper);
-        console.log("Range definido:", tickLower, " <-> ", tickUpper);
+        console.log("Range set:", tickLower, " <-> ", tickUpper);
 
-        // ============ PASSO 6: FORÇAR REBALANCE ============
-        console.log("\n--- PASSO 6: Forçar Criação de Posição (Rebalance) ---");
+        // ============ STEP 6: FORCE REBALANCE ============
+        console.log("\n--- STEP 6: Force Position Creation (Rebalance) ---");
         vault.testnet_forceRebalance();
-        console.log("Rebalance executado!");
+        console.log("Rebalance executed!");
 
-        // ============ PASSO 7: VER INFORMAÇÕES DA POSIÇÃO ============
-        console.log("\n--- PASSO 7: Informações da Posição Uniswap ---");
+        // ============ STEP 7: CHECK POSITION INFO ============
+        console.log("\n--- STEP 7: Uniswap Position Information ---");
         (
             uint256 tokenId,
             uint128 liquidity,
@@ -92,8 +92,8 @@ contract TestVaultScript is Script {
         console.log("Amount0 (USDC ou equiv):", amount0);
         console.log("Amount1 (token1):", amount1);
 
-        // ============ PASSO 8: SIMULAR REBALANCE ============
-        console.log("\n--- PASSO 8: Simular o que Aconteceria se Rebalanceasse ---");
+        // ============ STEP 8: SIMULATE REBALANCE ============
+        console.log("\n--- STEP 8: Simulate What Would Happen If Rebalanced ---");
         (
             bool shouldExit,
             bool shouldReenter,
@@ -104,37 +104,37 @@ contract TestVaultScript is Script {
         
         console.log("Should Exit:", shouldExit);
         console.log("Should Reenter:", shouldReenter);
-        console.log("New Range (se aplica):", newTickLower, " <-> ", newTickUpper);
+        console.log("New Range (if applies):", newTickLower, " <-> ", newTickUpper);
         console.log("Estimated Swap Fee:", estimatedSwapFee);
 
-        // ============ PASSO 9: VER ESTADO FINAL ============
-        console.log("\n--- PASSO 9: Estado Final ---");
+        // ============ STEP 9: CHECK FINAL STATE ============
+        console.log("\n--- STEP 9: Final State ---");
         console.log("Vault totalAssets:", vault.totalAssets());
         console.log("Vault totalSupply:", vault.totalSupply());
-        console.log("Meus shares:", vault.balanceOf(deployer));
-        console.log("USDC restante na carteira:", usdc.balanceOf(deployer));
+        console.log("My shares:", vault.balanceOf(deployer));
+        console.log("USDC remaining in wallet:", usdc.balanceOf(deployer));
 
-        // ============ PASSO 10: TESTAR SACAR (WITHDRAW) ============
-        console.log("\n--- PASSO 10: Testar Saque Parcial ---");
-        uint256 sharesToWithdraw = sharesMinted / 2;  // Sacar metade
+        // ============ STEP 10: TEST PARTIAL WITHDRAW ============
+        console.log("\n--- STEP 10: Test Partial Withdrawal ---");
+        uint256 sharesToWithdraw = sharesMinted / 2;  // Withdraw half
         if (sharesToWithdraw > 0) {
             uint256 assetsReceived = vault.redeem(sharesToWithdraw, deployer, deployer);
-            console.log("Shares retiradas:", sharesToWithdraw);
-            console.log("USDC recebidos:", assetsReceived);
+            console.log("Shares withdrawn:", sharesToWithdraw);
+            console.log("USDC received:", assetsReceived);
         }
 
-        console.log("\n--- ESTADO FINAL APÓS SAQUE ---");
-        console.log("Shares restantes:", vault.balanceOf(deployer));
+        console.log("\n--- FINAL STATE AFTER WITHDRAWAL ---");
+        console.log("Shares remaining:", vault.balanceOf(deployer));
         console.log("Vault totalAssets:", vault.totalAssets());
-        console.log("USDC na carteira:", usdc.balanceOf(deployer));
+        console.log("USDC in wallet:", usdc.balanceOf(deployer));
 
         vm.stopBroadcast();
 
-        console.log("\n========== TESTE COMPLETO! ==========\n");
-        console.log("Próximos passos:");
-        console.log("1. Monitore o preço de BTC");
-        console.log("2. Quando sair do range, execute testnet_simulateRebalance() novamente");
-        console.log("3. O vault deve detectar saída e fazer auto-exit/reenter");
-        console.log("4. Verifique as fees sendo cobradas em cada transação");
+        console.log("\n========== TEST COMPLETE! ==========\n");
+        console.log("Next steps:");
+        console.log("1. Monitor BTC price");
+        console.log("2. When price exits range, run testnet_simulateRebalance() again");
+        console.log("3. Vault should detect exit and do auto-exit/reenter");
+        console.log("4. Check fees being deducted in each transaction");
     }
 }
