@@ -537,15 +537,15 @@
                 </button>
 
                 <div style="margin: 15px 0; padding: 15px; background: #f0f0f0; border-radius: 8px;">
-                    <p style="margin: 0; font-size: 12px; color: #666; margin-bottom: 10px;">Calculated Ticks:</p>
+                    <p style="margin: 0; font-size: 12px; color: #666; margin-bottom: 10px;">Calculated Ticks (Pool tickSpacing: 60):</p>
                     <div class="two-col">
                         <div>
                             <small style="color: #666;">Tick Lower</small>
-                            <div id="tickLowerDisplay" style="font-weight: bold; color: #2563eb; font-size: 14px;">-94000</div>
+                            <div id="tickLowerDisplay" style="font-weight: bold; color: #2563eb; font-size: 14px;">-530700</div>
                         </div>
                         <div>
                             <small style="color: #666;">Tick Upper</small>
-                            <div id="tickUpperDisplay" style="font-weight: bold; color: #2563eb; font-size: 14px;">-88000</div>
+                            <div id="tickUpperDisplay" style="font-weight: bold; color: #2563eb; font-size: 14px;">-528300</div>
                         </div>
                     </div>
                 </div>
@@ -553,11 +553,11 @@
                 <div class="two-col">
                     <div class="input-group">
                         <label for="tickLower">Tick Lower</label>
-                        <input type="number" id="tickLower" placeholder="-94000" value="-94000">
+                        <input type="number" id="tickLower" placeholder="-530700" value="-530700">
                     </div>
                     <div class="input-group">
                         <label for="tickUpper">Tick Upper</label>
-                        <input type="number" id="tickUpper" placeholder="-88000" value="-88000">
+                        <input type="number" id="tickUpper" placeholder="-528300" value="-528300">
                     </div>
                 </div>
 
@@ -948,15 +948,15 @@
                     tickLower = Math.round(Math.log(1 / priceUpper) / Math.log(1.0001));
                     tickUpper = Math.round(Math.log(1 / priceLower) / Math.log(1.0001));
                     
-                    // Snap to tickSpacing (200)
-                    const TICK_SPACING = 200;
+                    // Snap to tickSpacing (60 for this pool)
+                    const TICK_SPACING = 60;
                     const snappedLower = Math.round(tickLower / TICK_SPACING) * TICK_SPACING;
                     const snappedUpper = Math.round(tickUpper / TICK_SPACING) * TICK_SPACING;
                     
                     tickLower = snappedLower;
                     tickUpper = snappedUpper;
                     
-                    console.log(`Calculated and snapped ticks: ${tickLower} to ${tickUpper}`);
+                    console.log(`Calculated and snapped ticks (spacing 60): ${tickLower} to ${tickUpper}`);
                 }
 
                 // Ensure tickLower < tickUpper
@@ -988,10 +988,11 @@
 
         function useDefaultTicks() {
             // These are safe default ticks that work with the contract
-            // Must be multiples of tickSpacing (usually 200 for 0.3% fee pools)
-            // Corresponding to approximately 90000 - 110000 USDC/WBTC range
-            const tickLower = -96000;  // Multiple of 200
-            const tickUpper = -84000;  // Multiple of 200
+            // Pool tickSpacing is 60 (verified from pool: 0xB5AD58...)
+            // Current tick: -529525
+            // Valid ticks must be multiples of 60
+            const tickLower = -530700;  // Multiple of 60
+            const tickUpper = -528300;  // Multiple of 60
 
             // Update display
             document.getElementById('tickLowerDisplay').textContent = tickLower;
@@ -1002,7 +1003,7 @@
             document.getElementById('tickUpper').value = tickUpper;
 
             document.getElementById('rangeStatus').className = 'status success';
-            document.getElementById('rangeStatus').textContent = `Default ticks set: ${tickLower} to ${tickUpper} (multiples of 200)`;
+            document.getElementById('rangeStatus').textContent = `Default ticks set: ${tickLower} to ${tickUpper} (multiples of 60)`;
             document.getElementById('rangeStatus').style.display = 'block';
             
             console.log(`Default safe ticks set: ${tickLower} to ${tickUpper}`);
