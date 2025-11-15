@@ -664,7 +664,15 @@
 
             } catch (error) {
                 console.error('Connection error:', error);
-                alert(`Error: ${error.message}`);
+                console.error('Error details:', {
+                    message: error.message,
+                    code: error.code,
+                    stack: error.stack
+                });
+                document.getElementById('depositStatus').className = 'status error';
+                document.getElementById('depositStatus').textContent = `Error: ${error.message}`;
+                document.getElementById('depositStatus').style.display = 'block';
+                alert(`Connection Error: ${error.message}`);
             }
         }
 
@@ -765,8 +773,23 @@
 
             } catch (error) {
                 console.error('Deposit error:', error);
+                console.error('Full error:', {
+                    message: error.message,
+                    code: error.code,
+                    reason: error.reason
+                });
+                
+                let errorMsg = error.message;
+                if (error.reason) {
+                    errorMsg = error.reason;
+                } else if (error.code === 'CALL_EXCEPTION') {
+                    errorMsg = 'Contract call failed - check contract address or ABI';
+                } else if (error.code === 'ACTION_REJECTED') {
+                    errorMsg = 'Transaction rejected by user';
+                }
+                
                 document.getElementById('depositStatus').className = 'status error';
-                document.getElementById('depositStatus').textContent = `Erro: ${error.message}`;
+                document.getElementById('depositStatus').textContent = `Erro: ${errorMsg}`;
                 document.getElementById('depositStatus').style.display = 'block';
             } finally {
                 showLoading('depositLoader', false);
