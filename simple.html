@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delta Neutral Vault - Simple Testnet</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .status { padding: 15px; margin: 15px 0; border-radius: 8px; }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .card { background: white; padding: 20px; margin: 15px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+        button { width: 100%; padding: 12px; margin: 10px 0; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        .address { font-family: monospace; font-size: 12px; word-break: break-all; background: #f0f0f0; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .info { font-size: 12px; color: #666; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ Delta Neutral Vault - Testnet (SIMPLES)</h1>
+        
+        <div class="card">
+            <h2>1️⃣ Status</h2>
+            <div id="statusDiv" class="status info">
+                Carregando...
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>2️⃣ Conectar Wallet</h2>
+            <p class="info">Qualquer wallet funciona (MetaMask, Rabby, etc)</p>
+            <button onclick="connectWallet()">Conectar Wallet</button>
+            <div id="walletInfo" class="info"></div>
+        </div>
+
+        <div class="card">
+            <h2>3️⃣ Depositar USDC</h2>
+            <input type="number" id="depositAmount" placeholder="Quantidade USDC (ex: 5)" min="0" step="0.01">
+            <button onclick="deposit()">Depositar</button>
+            <div id="depositStatus"></div>
+        </div>
+
+        <div class="card">
+            <h2>4️⃣ Ver Posição</h2>
+            <button onclick="checkPosition()">Verificar</button>
+            <div id="positionInfo"></div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Endereços Testnet</h2>
+            <p>Vault:</p>
+            <div class="address">0x844bc19AEB38436131c2b4893f5E0772162F67d6</div>
+            
+            <p>USDC:</p>
+            <div class="address">0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d</div>
+            
+            <p>WBTC Mock:</p>
+            <div class="address">0xEf39185d82F3Dd98046107D6Ca9bA2AF77a2B5dF</div>
+            
+            <p>Pool USDC/WBTC:</p>
+            <div class="address">0xB5AD58CBcc1a9DB06A9852b20aEc95FF3ba56F3a</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.umd.js"></script>
+    <script>
+        const VAULT = "0x844bc19AEB38436131c2b4893f5E0772162F67d6";
+        const USDC = "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
+        const RPC = "https://sepolia-rollup.arbitrum.io/rpc";
+        const CHAIN_ID = 421614;
+
+        let provider, signer, userAddress;
+        const VAULT_ABI = [
+            "function deposit(uint256 assets, address receiver) public returns (uint256)",
+            "function balanceOf(address) public view returns (uint256)",
+            "function totalAssets() public view returns (uint256)"
+        ];
+        const USDC_ABI = [
+            "function balanceOf(address) public view returns (uint256)",
+            "function approve(address spender, uint256 amount) public returns (bool)"
+        ];
+
+        // Status inicial
+        document.getElementById('statusDiv').innerHTML = `
+            <strong>✅ Vault pronto!</strong><br>
+            Pool: 0xB5AD58CBcc1a9DB06A9852b20aEc95FF3ba56F3a<br>
+            Range: -530700 a -528300<br>
+            Rede: Arbitrum Sepolia
+        `;
+
+        async function connectWallet() {
+            try {
+                console.log("Tentando conectar...");
+                console.log("window.ethereum:", window.ethereum);
+                
+                if (!window.ethereum) {
+                    alert('Nenhuma wallet detectada! Instale Rabby, MetaMask ou outra wallet.');
+                    return;
+                }
+                
+                // Request account access
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                console.log("Contas:", accounts);
+                userAddress = accounts[0];
+                
+                // Check network
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                console.log("Chain ID:", chainId, "Esperado:", CHAIN_ID);
+                
+                if (parseInt(chainId) !== CHAIN_ID) {
+                    alert('Mude para Arbitrum Sepolia na sua wallet!');
+                    return;
+                }
+                
+                // Create provider and signer
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+
+                document.getElementById('walletInfo').innerHTML = `
+                    <strong>✅ Conectado!</strong><br>
+                    ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}
+                `;
+                console.log("Conectado com sucesso!");
+            } catch (e) {
+                console.error('Erro completo:', e);
+                alert('Erro ao conectar: ' + e.message);
+            }
+        }
+
+        async function deposit() {
+            if (!userAddress) {
+                alert('Conecte a wallet primeiro!');
+                return;
+            }
+
+            const amount = document.getElementById('depositAmount').value;
+            if (!amount || parseFloat(amount) <= 0) {
+                alert('Insira uma quantidade válida!');
+                return;
+            }
+
+            try {
+                document.getElementById('depositStatus').innerHTML = '<div class="status info">Enviando...</div>';
+                
+                const usdcContract = new ethers.Contract(USDC, USDC_ABI, signer);
+                const vaultContract = new ethers.Contract(VAULT, VAULT_ABI, signer);
+                
+                const amountWei = ethers.parseUnits(amount, 6);
+                
+                // Approve
+                let tx = await usdcContract.approve(VAULT, amountWei);
+                await tx.wait();
+                
+                // Deposit
+                tx = await vaultContract.deposit(amountWei, userAddress);
+                const receipt = await tx.wait();
+                
+                document.getElementById('depositStatus').innerHTML = `
+                    <div class="status success">
+                        ✅ Depositado!<br>
+                        Hash: ${receipt.hash.slice(0, 10)}...
+                    </div>
+                `;
+            } catch (e) {
+                document.getElementById('depositStatus').innerHTML = `
+                    <div class="status error">
+                        ❌ Erro: ${e.message || 'Desconhecido'}
+                    </div>
+                `;
+            }
+        }
+
+        async function checkPosition() {
+            if (!userAddress) {
+                alert('Conecte a wallet primeiro!');
+                return;
+            }
+
+            try {
+                const vaultContract = new ethers.Contract(VAULT, VAULT_ABI, provider);
+                const shares = await vaultContract.balanceOf(userAddress);
+                const totalAssets = await vaultContract.totalAssets();
+                
+                document.getElementById('positionInfo').innerHTML = `
+                    <div class="status success">
+                        <strong>Suas shares:</strong> ${ethers.formatUnits(shares, 18)}<br>
+                        <strong>Total no vault:</strong> ${ethers.formatUnits(totalAssets, 6)} USDC
+                    </div>
+                `;
+            } catch (e) {
+                document.getElementById('positionInfo').innerHTML = `
+                    <div class="status error">❌ Erro: ${e.message}</div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
