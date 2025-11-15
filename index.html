@@ -542,6 +542,9 @@
 
     <script src="https://cdn.ethers.io/v6/ethers.umd.js"></script>
     <script>
+        console.log('Script loaded');
+        console.log('Ethers:', typeof ethers);
+        
         // Constants
         const VAULT_ADDRESS = "0x6cf5791356EEf878536Ee006f18410861D93198D";
         const USDC_ADDRESS = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
@@ -576,17 +579,23 @@
 
         async function connectWallet() {
             try {
+                console.log('Connect button clicked');
+                console.log('Window.ethereum:', window.ethereum);
+                
                 if (!window.ethereum) {
-                    showStatus('error', 'MetaMask não encontrado. Por favor, instale MetaMask');
+                    alert('MetaMask não encontrado. Por favor, instale MetaMask');
                     return;
                 }
 
                 // Request account access
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                 userAddress = accounts[0];
+                console.log('Connected address:', userAddress);
 
                 // Check network
                 const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                console.log('Current chain ID:', chainId, 'Expected:', `0x${CHAIN_ID.toString(16)}`);
+                
                 if (parseInt(chainId) !== CHAIN_ID) {
                     try {
                         await window.ethereum.request({
@@ -594,7 +603,7 @@
                             params: [{ chainId: `0x${CHAIN_ID.toString(16)}` }],
                         });
                     } catch (err) {
-                        showStatus('error', 'Por favor, mude para Arbitrum Sepolia manualmente');
+                        alert('Por favor, mude para Arbitrum Sepolia manualmente');
                         return;
                     }
                 }
@@ -602,6 +611,7 @@
                 // Setup ethers
                 provider = new ethers.BrowserProvider(window.ethereum);
                 signer = await provider.getSigner();
+                console.log('Signer initialized');
 
                 // Initialize contracts
                 vaultContract = new ethers.Contract(VAULT_ADDRESS, VAULT_ABI, signer);
@@ -629,11 +639,13 @@
                 // Fetch initial data
                 await fetchBalances();
 
-                showStatus('success', 'Carteira conectada com sucesso!');
+                document.getElementById('depositStatus').className = 'status success';
+                document.getElementById('depositStatus').textContent = 'Carteira conectada com sucesso!';
+                document.getElementById('depositStatus').style.display = 'block';
 
             } catch (error) {
                 console.error('Connection error:', error);
-                showStatus('error', `Erro: ${error.message}`);
+                alert(`Erro: ${error.message}`);
             }
         }
 
@@ -669,25 +681,26 @@
 
             } catch (error) {
                 console.error('Error fetching balances:', error);
+                // Don't show alert - just log
             }
         }
 
         async function deposit() {
             try {
                 if (!userAddress) {
-                    showStatus('error', 'Por favor, conecte sua carteira primeiro');
+                    alert('Por favor, conecte sua carteira primeiro');
                     return;
                 }
 
                 const amount = document.getElementById('depositAmount').value;
                 if (!amount || amount === '0') {
-                    showStatus('error', 'Por favor, digite um valor válido');
+                    alert('Por favor, digite um valor válido');
                     return;
                 }
 
                 const receiver = document.getElementById('depositReceiver').value;
                 if (!receiver.startsWith('0x')) {
-                    showStatus('error', 'Receiver inválido');
+                    alert('Receiver inválido');
                     return;
                 }
 
@@ -700,30 +713,42 @@
                 // Check allowance
                 const allowance = await usdcContract.allowance(userAddress, VAULT_ADDRESS);
                 if (allowance < amountWei) {
-                    showStatus('warning', 'Approve token being requested...');
+                    document.getElementById('depositStatus').className = 'status warning';
+                    document.getElementById('depositStatus').textContent = 'Approving token...';
+                    document.getElementById('depositStatus').style.display = 'block';
+                    
                     const approveTx = await usdcContract.approve(VAULT_ADDRESS, amountWei);
                     await approveTx.wait();
-                    showStatus('info', 'Token aprovado!');
+                    
+                    document.getElementById('depositStatus').className = 'status info';
+                    document.getElementById('depositStatus').textContent = 'Token approved!';
                 }
 
                 // Deposit
-                showStatus('info', 'Depositando...');
+                document.getElementById('depositStatus').className = 'status info';
+                document.getElementById('depositStatus').textContent = 'Depositando...';
+                document.getElementById('depositStatus').style.display = 'block';
+                
                 const tx = await vaultContract.deposit(amountWei, receiver);
                 const receipt = await tx.wait();
 
                 if (receipt.status === 1) {
-                    showStatus('success', `Depósito realizado! Hash: ${receipt.hash}`);
+                    document.getElementById('depositStatus').className = 'status success';
+                    document.getElementById('depositStatus').textContent = `Depósito realizado! Hash: ${receipt.hash}`;
                     document.getElementById('step2').className = 'step completed';
                     document.getElementById('step3').className = 'step active';
                     await fetchBalances();
                     document.getElementById('depositAmount').value = '';
                 } else {
-                    showStatus('error', 'Transação falhou');
+                    document.getElementById('depositStatus').className = 'status error';
+                    document.getElementById('depositStatus').textContent = 'Transação falhou';
                 }
 
             } catch (error) {
                 console.error('Deposit error:', error);
-                showStatus('error', `Erro: ${error.message}`);
+                document.getElementById('depositStatus').className = 'status error';
+                document.getElementById('depositStatus').textContent = `Erro: ${error.message}`;
+                document.getElementById('depositStatus').style.display = 'block';
             } finally {
                 showLoading('depositLoader', false);
             }
@@ -732,7 +757,7 @@
         async function setRange() {
             try {
                 if (!userAddress) {
-                    showStatus('error', 'Por favor, conecte sua carteira primeiro', 'rangeStatus');
+                    alert('Por favor, conecte sua carteira primeiro');
                     return;
                 }
 
@@ -740,28 +765,34 @@
                 const tickUpper = parseInt(document.getElementById('tickUpper').value);
 
                 if (isNaN(tickLower) || isNaN(tickUpper)) {
-                    showStatus('error', 'Ticks inválidos', 'rangeStatus');
+                    alert('Ticks inválidos');
                     return;
                 }
 
                 showLoading('rangeLoader', true);
-                document.getElementById('rangeStatus').style.display = 'none';
 
-                showStatus('info', 'Configurando range...', 'rangeStatus');
+                document.getElementById('rangeStatus').className = 'status info';
+                document.getElementById('rangeStatus').textContent = 'Configurando range...';
+                document.getElementById('rangeStatus').style.display = 'block';
+
                 const tx = await vaultContract.setRange(tickLower, tickUpper);
                 const receipt = await tx.wait();
 
                 if (receipt.status === 1) {
-                    showStatus('success', `Range configurado! Hash: ${receipt.hash}`, 'rangeStatus');
+                    document.getElementById('rangeStatus').className = 'status success';
+                    document.getElementById('rangeStatus').textContent = `Range configurado! Hash: ${receipt.hash}`;
                     document.getElementById('step3').className = 'step completed';
                     document.getElementById('step4').className = 'step active';
                 } else {
-                    showStatus('error', 'Transação falhou', 'rangeStatus');
+                    document.getElementById('rangeStatus').className = 'status error';
+                    document.getElementById('rangeStatus').textContent = 'Transação falhou';
                 }
 
             } catch (error) {
                 console.error('Set range error:', error);
-                showStatus('error', `Erro: ${error.message}`, 'rangeStatus');
+                document.getElementById('rangeStatus').className = 'status error';
+                document.getElementById('rangeStatus').textContent = `Erro: ${error.message}`;
+                document.getElementById('rangeStatus').style.display = 'block';
             } finally {
                 showLoading('rangeLoader', false);
             }
@@ -770,29 +801,36 @@
         async function getPositionInfo() {
             try {
                 if (!userAddress) {
-                    showStatus('error', 'Por favor, conecte sua carteira', 'positionStatus');
+                    document.getElementById('positionStatus').className = 'status error';
+                    document.getElementById('positionStatus').textContent = 'Por favor, conecte sua carteira';
+                    document.getElementById('positionStatus').style.display = 'block';
                     return;
                 }
 
-                showStatus('info', 'Carregando informações da posição...', 'positionStatus');
+                document.getElementById('positionStatus').className = 'status info';
+                document.getElementById('positionStatus').textContent = 'Carregando informações da posição...';
+                document.getElementById('positionStatus').style.display = 'block';
                 
                 // Note: testnet_getPositionInfo may not exist on main contract
                 // Just show placeholder
                 document.getElementById('positionBox').style.display = 'block';
                 document.getElementById('tokenId').textContent = 'Use testnet contract para ver';
                 
-                showStatus('warning', 'Use DeltaNeutralVaultV1Testnet para ver posição completa', 'positionStatus');
+                document.getElementById('positionStatus').className = 'status warning';
+                document.getElementById('positionStatus').textContent = 'Use DeltaNeutralVaultV1Testnet para ver posição completa';
 
             } catch (error) {
                 console.error('Position error:', error);
-                showStatus('error', `Erro: ${error.message}`, 'positionStatus');
+                document.getElementById('positionStatus').className = 'status error';
+                document.getElementById('positionStatus').textContent = `Erro: ${error.message}`;
+                document.getElementById('positionStatus').style.display = 'block';
             }
         }
 
         async function withdraw() {
             try {
                 if (!userAddress) {
-                    showStatus('error', 'Por favor, conecte sua carteira', 'withdrawStatus');
+                    alert('Por favor, conecte sua carteira');
                     return;
                 }
 
@@ -806,29 +844,35 @@
                 }
 
                 if (shares === 0n) {
-                    showStatus('error', 'Você não tem shares para sacar', 'withdrawStatus');
+                    alert('Você não tem shares para sacar');
                     return;
                 }
 
                 showLoading('withdrawLoader', true);
-                document.getElementById('withdrawStatus').style.display = 'none';
 
-                showStatus('info', 'Sacando...', 'withdrawStatus');
+                document.getElementById('withdrawStatus').className = 'status info';
+                document.getElementById('withdrawStatus').textContent = 'Sacando...';
+                document.getElementById('withdrawStatus').style.display = 'block';
+
                 const tx = await vaultContract.redeem(shares, userAddress, userAddress);
                 const receipt = await tx.wait();
 
                 if (receipt.status === 1) {
-                    showStatus('success', `Saque realizado! Hash: ${receipt.hash}`, 'withdrawStatus');
+                    document.getElementById('withdrawStatus').className = 'status success';
+                    document.getElementById('withdrawStatus').textContent = `Saque realizado! Hash: ${receipt.hash}`;
                     document.getElementById('step5').className = 'step completed';
                     await fetchBalances();
                     document.getElementById('withdrawShares').value = '';
                 } else {
-                    showStatus('error', 'Transação falhou', 'withdrawStatus');
+                    document.getElementById('withdrawStatus').className = 'status error';
+                    document.getElementById('withdrawStatus').textContent = 'Transação falhou';
                 }
 
             } catch (error) {
                 console.error('Withdraw error:', error);
-                showStatus('error', `Erro: ${error.message}`, 'withdrawStatus');
+                document.getElementById('withdrawStatus').className = 'status error';
+                document.getElementById('withdrawStatus').textContent = `Erro: ${error.message}`;
+                document.getElementById('withdrawStatus').style.display = 'block';
             } finally {
                 showLoading('withdrawLoader', false);
             }
