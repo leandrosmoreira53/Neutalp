@@ -845,16 +845,16 @@
 
                 // Uniswap v3 formula: tick = log_1.0001(price)
                 // For very large prices, we use reciprocal: tick = log_1.0001(1/price)
-                // Higher price (100000) → smaller reciprocal (1/100000) → lower tick
-                // Lower price (93000) → larger reciprocal (1/93000) → higher tick
-                // So: tickLower = log(1/priceUpper), tickUpper = log(1/priceLower)
-                
-                const tickLower = Math.round(Math.log(1 / priceUpper) / Math.log(1.0001));
-                const tickUpper = Math.round(Math.log(1 / priceLower) / Math.log(1.0001));
+                let tickLower = Math.round(Math.log(1 / priceUpper) / Math.log(1.0001));
+                let tickUpper = Math.round(Math.log(1 / priceLower) / Math.log(1.0001));
 
-                // Verify tickLower < tickUpper
+                // Snap to tickSpacing (usually 200 for 0.3% pools)
+                const TICK_SPACING = 200;
+                tickLower = snapToTickSpacing(tickLower, TICK_SPACING);
+                tickUpper = snapToTickSpacing(tickUpper, TICK_SPACING);
+
+                // Ensure tickLower < tickUpper
                 if (tickLower >= tickUpper) {
-                    // If not, swap them
                     const temp = tickLower;
                     tickLower = tickUpper;
                     tickUpper = temp;
@@ -869,8 +869,7 @@
                 document.getElementById('tickUpper').value = tickUpper;
 
                 console.log(`Price range: ${priceLower} - ${priceUpper}`);
-                console.log(`Reciprocals: 1/${priceUpper} = ${(1/priceUpper).toFixed(10)}, 1/${priceLower} = ${(1/priceLower).toFixed(10)}`);
-                console.log(`Calculated ticks: ${tickLower} - ${tickUpper}`);
+                console.log(`Calculated ticks (snapped to spacing 200): ${tickLower} - ${tickUpper}`);
                 console.log(`Validation: tickLower (${tickLower}) < tickUpper (${tickUpper})? ${tickLower < tickUpper}`);
                 
                 if (tickLower >= tickUpper) {
@@ -878,7 +877,7 @@
                     document.getElementById('rangeStatus').textContent = `ERROR: Tick order invalid!`;
                 } else {
                     document.getElementById('rangeStatus').className = 'status success';
-                    document.getElementById('rangeStatus').textContent = `Ticks calculated: ${tickLower} to ${tickUpper}`;
+                    document.getElementById('rangeStatus').textContent = `Ticks calculated and snapped to spacing: ${tickLower} to ${tickUpper}`;
                 }
                 document.getElementById('rangeStatus').style.display = 'block';
             } catch (error) {
@@ -889,9 +888,10 @@
 
         function useDefaultTicks() {
             // These are safe default ticks that work with the contract
+            // Must be multiples of tickSpacing (usually 200 for 0.3% fee pools)
             // Corresponding to approximately 90000 - 110000 USDC/WBTC range
-            const tickLower = -96000;
-            const tickUpper = -84000;
+            const tickLower = -96000;  // Multiple of 200
+            const tickUpper = -84000;  // Multiple of 200
 
             // Update display
             document.getElementById('tickLowerDisplay').textContent = tickLower;
@@ -902,10 +902,15 @@
             document.getElementById('tickUpper').value = tickUpper;
 
             document.getElementById('rangeStatus').className = 'status success';
-            document.getElementById('rangeStatus').textContent = `Default ticks set: ${tickLower} to ${tickUpper}`;
+            document.getElementById('rangeStatus').textContent = `Default ticks set: ${tickLower} to ${tickUpper} (multiples of 200)`;
             document.getElementById('rangeStatus').style.display = 'block';
             
             console.log(`Default safe ticks set: ${tickLower} to ${tickUpper}`);
+        }
+
+        function snapToTickSpacing(tick, spacing = 200) {
+            // Round to nearest multiple of tickSpacing
+            return Math.round(tick / spacing) * spacing;
         }
 
         async function setRange() {
