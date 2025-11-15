@@ -619,17 +619,88 @@
             </div>
         </div>
 
-        <!-- INSTRUCTIONS SECTION -->
-        <div class="card full-width" style="background: #f8f9fa;">
-            <h2>📖 Instructions</h2>
+        <!-- STATUS SECTION -->
+        <div class="card full-width" style="background: #dcfce7; border-left: 4px solid #16a34a;">
+            <h2 style="color: #16a34a;">✅ Vault Setup Complete!</h2>
+            <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 8px;">
+                <p><strong>All pre-configured on Arbitrum Sepolia (Nov 15, 2025):</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>Pool:</strong> 0xB5AD58CBcc1a9DB06A9852b20aEc95FF3ba56F3a ✅</li>
+                    <li><strong>Range:</strong> ticks [-530700, -528300] ✅</li>
+                    <li><strong>Ready for deposits & testing</strong> ✅</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- QUICK START SECTION -->
+        <div class="card full-width" style="background: #eff6ff; border-left: 4px solid #3b82f6;">
+            <h2 style="color: #3b82f6;">🚀 Quick Start Guide</h2>
             <ol style="margin-left: 20px; line-height: 1.8;">
-                <li><strong>Connect MetaMask:</strong> Clique em "Connect MetaMask" e selecione Arbitrum Sepolia</li>
-                <li><strong>Obter USDC Sepolia:</strong> Procure por um faucet ou airdrop de USDC na testnet</li>
-                <li><strong>Depositar:</strong> Digite a quantidade (ex: 10 USDC) e clique "Deposit USDC"</li>
-                <li><strong>Configurar Range:</strong> Deixe os valores padrão e clique "Set Range"</li>
-                <li><strong>Monitorar Posição:</strong> Clique "Refresh Position" para ver sua posição Uniswap</li>
-                <li><strong>Sacar:</strong> Clique "Withdraw" para sacar seus fundos</li>
+                <li><strong>Connect MetaMask:</strong> 
+                    <ul style="margin-top: 5px;">
+                        <li>Click "🔗 Connect MetaMask"</li>
+                        <li>Select <strong>Arbitrum Sepolia</strong> network</li>
+                        <li>Approve connection</li>
+                    </ul>
+                </li>
+                <li><strong>Get USDC Testnet:</strong> 
+                    <ul style="margin-top: 5px;">
+                        <li>Bridge from Ethereum Sepolia, OR</li>
+                        <li>Find Arbitrum Sepolia faucet</li>
+                    </ul>
+                </li>
+                <li><strong>Deposit:</strong>
+                    <ul style="margin-top: 5px;">
+                        <li>Go to "💰 Deposit" section</li>
+                        <li>Enter USDC amount (e.g., 5 USDC)</li>
+                        <li>Click "Deposit"</li>
+                    </ul>
+                </li>
+                <li><strong>Configure Range (Optional - Already Done):</strong>
+                    <ul style="margin-top: 5px;">
+                        <li>Pool: 0xB5AD58CBcc1a9DB06A9852b20aEc95FF3ba56F3a (pre-filled)</li>
+                        <li>Ticks: -530700 / -528300 (pre-filled & safe)</li>
+                        <li>Just click "Configure Pool" and "Set Range"</li>
+                    </ul>
+                </li>
+                <li><strong>Monitor Position:</strong>
+                    <ul style="margin-top: 5px;">
+                        <li>Go to "🎯 Position Info" section</li>
+                        <li>Click "Refresh Position"</li>
+                        <li>View your LP Token ID and liquidity</li>
+                    </ul>
+                </li>
+                <li><strong>Withdraw:</strong>
+                    <ul style="margin-top: 5px;">
+                        <li>Go to "🔄 Withdraw" section</li>
+                        <li>Enter shares or leave blank for full exit</li>
+                        <li>Click "Withdraw"</li>
+                    </ul>
+                </li>
             </ol>
+        </div>
+
+        <!-- ADDRESSES SECTION -->
+        <div class="card full-width" style="background: #f5f3ff; border-left: 4px solid #a78bfa;">
+            <h2 style="color: #7c3aed;">🔗 Testnet Addresses</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="background: white; padding: 15px; border-radius: 8px;">
+                    <p style="margin: 0; color: #666; font-size: 0.9em; font-weight: 500;">VAULT</p>
+                    <code style="display: block; word-break: break-all; margin-top: 5px; font-size: 0.85em;">0x844bc19AEB38436131c2b4893f5E0772162F67d6</code>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px;">
+                    <p style="margin: 0; color: #666; font-size: 0.9em; font-weight: 500;">USDC (Arbitrum Sepolia)</p>
+                    <code style="display: block; word-break: break-all; margin-top: 5px; font-size: 0.85em;">0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d</code>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px;">
+                    <p style="margin: 0; color: #666; font-size: 0.9em; font-weight: 500;">WBTC MOCK</p>
+                    <code style="display: block; word-break: break-all; margin-top: 5px; font-size: 0.85em;">0xEf39185d82F3Dd98046107D6Ca9bA2AF77a2B5dF</code>
+                </div>
+                <div style="background: white; padding: 15px; border-radius: 8px;">
+                    <p style="margin: 0; color: #666; font-size: 0.9em; font-weight: 500;">POOL (USDC/WBTC 0.3%)</p>
+                    <code style="display: block; word-break: break-all; margin-top: 5px; font-size: 0.85em;">0xB5AD58CBcc1a9DB06A9852b20aEc95FF3ba56F3a</code>
+                </div>
+            </div>
         </div>
     </div>
 
