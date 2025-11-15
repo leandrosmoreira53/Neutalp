@@ -454,19 +454,47 @@
             <!-- RANGE SECTION -->
             <div class="card">
                 <h2>📈 Set Range</h2>
+                <p>Configure the price range for WBTC/USDC position</p>
+
+                <div class="two-col">
+                    <div class="input-group">
+                        <label for="priceLower">Price Lower (USDC/WBTC)</label>
+                        <input type="number" id="priceLower" placeholder="93000" value="93000">
+                    </div>
+                    <div class="input-group">
+                        <label for="priceUpper">Price Upper (USDC/WBTC)</label>
+                        <input type="number" id="priceUpper" placeholder="100000" value="100000">
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="convertPricesToTicks()" style="margin: 10px 0;">
+                    Convert to Ticks
+                </button>
+
+                <div style="margin: 15px 0; padding: 15px; background: #f0f0f0; border-radius: 8px;">
+                    <p style="margin: 0; font-size: 12px; color: #666; margin-bottom: 10px;">Calculated Ticks:</p>
+                    <div class="two-col">
+                        <div>
+                            <small style="color: #666;">Tick Lower</small>
+                            <div id="tickLowerDisplay" style="font-weight: bold; color: #2563eb; font-size: 14px;">-94000</div>
+                        </div>
+                        <div>
+                            <small style="color: #666;">Tick Upper</small>
+                            <div id="tickUpperDisplay" style="font-weight: bold; color: #2563eb; font-size: 14px;">-88000</div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="two-col">
                     <div class="input-group">
                         <label for="tickLower">Tick Lower</label>
-                        <input type="number" id="tickLower" placeholder="-887000" value="-887000">
+                        <input type="number" id="tickLower" placeholder="-94000" value="-94000">
                     </div>
                     <div class="input-group">
                         <label for="tickUpper">Tick Upper</label>
-                        <input type="number" id="tickUpper" placeholder="-882000" value="-882000">
+                        <input type="number" id="tickUpper" placeholder="-88000" value="-88000">
                     </div>
                 </div>
-
-                <small style="color: #999;">Valores padrão para BTC/USD range</small>
 
                 <button class="btn-primary" onclick="setRange()" style="margin-top: 15px;">
                     <span id="rangeText">Set Range</span>
@@ -793,6 +821,45 @@
                 document.getElementById('depositStatus').style.display = 'block';
             } finally {
                 showLoading('depositLoader', false);
+            }
+        }
+
+        function convertPricesToTicks() {
+            try {
+                const priceLower = parseFloat(document.getElementById('priceLower').value);
+                const priceUpper = parseFloat(document.getElementById('priceUpper').value);
+
+                if (isNaN(priceLower) || isNaN(priceUpper) || priceLower <= 0 || priceUpper <= 0) {
+                    alert('Preços inválidos');
+                    return;
+                }
+
+                if (priceLower >= priceUpper) {
+                    alert('Preço lower deve ser menor que upper');
+                    return;
+                }
+
+                // Uniswap v3 formula: tick = log(price) / log(1.0001)
+                // For WBTC/USDC: log price in terms of token1/token0
+                const tickLower = Math.round(Math.log(priceLower) / Math.log(1.0001));
+                const tickUpper = Math.round(Math.log(priceUpper) / Math.log(1.0001));
+
+                // Update display
+                document.getElementById('tickLowerDisplay').textContent = tickLower;
+                document.getElementById('tickUpperDisplay').textContent = tickUpper;
+
+                // Update input fields
+                document.getElementById('tickLower').value = tickLower;
+                document.getElementById('tickUpper').value = tickUpper;
+
+                console.log(`Converted: ${priceLower} - ${priceUpper} to ticks ${tickLower} - ${tickUpper}`);
+                
+                document.getElementById('rangeStatus').className = 'status success';
+                document.getElementById('rangeStatus').textContent = `Ticks calculated: ${tickLower} to ${tickUpper}`;
+                document.getElementById('rangeStatus').style.display = 'block';
+            } catch (error) {
+                console.error('Conversion error:', error);
+                alert(`Erro ao converter: ${error.message}`);
             }
         }
 
