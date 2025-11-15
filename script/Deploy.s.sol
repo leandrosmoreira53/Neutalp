@@ -13,11 +13,11 @@ contract DeployScript is Script {
 
     function run() external {
         // Configuração - AJUSTE ESTES ENDEREÇOS
-        address USDC_ADDRESS = 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238; // Sepolia USDC
-        address CHAINLINK_FEED = 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43; // BTC/USD Sepolia
-        address POSITION_MANAGER = 0x1238536071E1c677A632429e3655c799b22cDA52; // Sepolia
-        address SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564; // Sepolia
-        address ONEINCH_ROUTER = 0x1111111254EEB25477B68fb85Ed929f73A960582; // 1inch v5 Router (Mainnet/Sepolia)
+        address USDC_ADDRESS = 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d; // Arbitrum Sepolia USDC
+        address CHAINLINK_FEED = 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43; // BTC/USD Arbitrum Sepolia
+        address POSITION_MANAGER = 0x1238536071E1c677A632429e3655c799b22cDA52; // Arbitrum Sepolia
+        address SWAP_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564; // Arbitrum Sepolia
+        address ONEINCH_ROUTER = 0x1111111254EEB25477B68fb85Ed929f73A960582; // 1inch v5 Router
 
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
