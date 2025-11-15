@@ -540,10 +540,22 @@
         </div>
     </div>
 
-    <script src="https://cdn.ethers.io/v6/ethers.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.1/dist/ethers.umd.min.js"></script>
     <script>
         console.log('Script loaded');
-        console.log('Ethers:', typeof ethers);
+        
+        // Wait for ethers to load
+        if (typeof ethers === 'undefined') {
+            console.error('Ethers library failed to load from CDN');
+            // Fallback: Try alternative CDN
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/ethers@6/dist/ethers.umd.js';
+            script.onload = () => console.log('Ethers loaded from fallback CDN');
+            script.onerror = () => console.error('All ethers CDNs failed to load');
+            document.head.appendChild(script);
+        } else {
+            console.log('Ethers loaded successfully');
+        }
         
         // Constants
         const VAULT_ADDRESS = "0x6cf5791356EEf878536Ee006f18410861D93198D";
@@ -581,9 +593,10 @@
             try {
                 console.log('Connect button clicked');
                 console.log('Window.ethereum:', window.ethereum);
+                console.log('Ethers available:', typeof ethers);
                 
                 if (!window.ethereum) {
-                    alert('MetaMask não encontrado. Por favor, instale MetaMask');
+                    alert('MetaMask not found. Please install MetaMask');
                     return;
                 }
 
@@ -603,9 +616,15 @@
                             params: [{ chainId: `0x${CHAIN_ID.toString(16)}` }],
                         });
                     } catch (err) {
-                        alert('Por favor, mude para Arbitrum Sepolia manualmente');
+                        alert('Please switch to Arbitrum Sepolia manually in MetaMask');
                         return;
                     }
+                }
+
+                // Wait for ethers to be available
+                if (typeof ethers === 'undefined') {
+                    alert('Ethers library still loading... please try again');
+                    return;
                 }
 
                 // Setup ethers
@@ -640,12 +659,12 @@
                 await fetchBalances();
 
                 document.getElementById('depositStatus').className = 'status success';
-                document.getElementById('depositStatus').textContent = 'Carteira conectada com sucesso!';
+                document.getElementById('depositStatus').textContent = 'Wallet connected successfully!';
                 document.getElementById('depositStatus').style.display = 'block';
 
             } catch (error) {
                 console.error('Connection error:', error);
-                alert(`Erro: ${error.message}`);
+                alert(`Error: ${error.message}`);
             }
         }
 
@@ -903,6 +922,23 @@
             window.ethereum.on('chainChanged', () => {
                 location.reload();
             });
+        }
+        
+        // Ensure ethers is available
+        function waitForEthers(callback, maxAttempts = 10) {
+            let attempts = 0;
+            const interval = setInterval(() => {
+                if (typeof ethers !== 'undefined') {
+                    clearInterval(interval);
+                    console.log('Ethers is ready');
+                    callback();
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    console.error('Ethers failed to load');
+                } else {
+                    attempts++;
+                }
+            }, 500);
         }
     </script>
 </body>
