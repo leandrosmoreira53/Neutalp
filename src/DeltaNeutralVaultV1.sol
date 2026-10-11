@@ -961,14 +961,16 @@ contract DeltaNeutralVaultV1 is ERC20, ERC4626, Ownable, Pausable, ReentrancyGua
         // Cobra management fee antes do depósito
         _chargeManagementFee();
 
-        // Transfer assets antes de cobrar fee
+        // Shares calculadas ANTES da transferência. Se o depósito já estivesse no saldo,
+        // totalAssets() o incluiria e o primeiro depositante receberia 0 shares (perda total).
+        uint256 netAssets = assets - (assets * entryFeeBps) / 10000;
+        uint256 shares = previewDeposit(netAssets);
+        require(shares > 0, "DeltaNeutralVault: zero shares");
+
         IERC20(asset()).safeTransferFrom(msg.sender, address(this), assets);
 
-        // Cobra entry fee
-        uint256 netAssets = _chargeEntryFee(assets);
-
-        // Calcula shares baseado nos assets líquidos
-        uint256 shares = previewDeposit(netAssets);
+        // Cobra entry fee (fixada em 0% em setFees; mantida para não mudar a interface)
+        _chargeEntryFee(assets);
 
         // Minta shares para o receiver
         _mint(receiver, shares);

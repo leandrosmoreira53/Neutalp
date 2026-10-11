@@ -110,7 +110,8 @@ contract DeltaNeutralVaultTest is Test {
             address(chainlinkFeed),
             address(0), // ← zero address
             address(positionManager),
-            address(swapRouter)
+            address(swapRouter),
+            address(oneInchRouter)
         );
     }
 
@@ -140,21 +141,21 @@ contract DeltaNeutralVaultTest is Test {
 
     function test_Configuration_SetFees() public {
         vm.expectEmit(false, false, false, true);
-        emit FeesUpdated(2000, 200, 50, 50, 30, 10);
+        emit FeesUpdated(1500, 200, 0, 0, 30, 10);
 
         vault.setFees(
-            2000,  // 20% performance
+            1500,  // 15% performance (máximo do contrato)
             200,   // 2% management
-            50,    // 0.5% entry
-            50,    // 0.5% exit
+            0,     // entry fixa em 0%
+            0,     // exit fixa em 0%
             30,    // 0.3% swap
             10     // 0.1% keeper
         );
 
-        assertEq(vault.performanceFeeBps(), 2000);
+        assertEq(vault.performanceFeeBps(), 1500);
         assertEq(vault.managementFeeBps(), 200);
-        assertEq(vault.entryFeeBps(), 50);
-        assertEq(vault.exitFeeBps(), 50);
+        assertEq(vault.entryFeeBps(), 0);
+        assertEq(vault.exitFeeBps(), 0);
         assertEq(vault.swapFeeBps(), 30);
         assertEq(vault.keeperFeeBps(), 10);
     }
@@ -197,27 +198,10 @@ contract DeltaNeutralVaultTest is Test {
         assertEq(vault.balanceOf(user1), shares, "User should have shares");
     }
 
-    function test_Deposit_ChargesEntryFee() public {
-        // Set 1% entry fee
+    /// Entry fee é fixa em 0% por design (setFees rejeita qualquer outro valor).
+    function test_Deposit_EntryFeeIsFixedAtZero() public {
+        vm.expectRevert("DeltaNeutralVault: entry fee must be 0%");
         vault.setFees(0, 0, 100, 0, 0, 0);
-
-        uint256 depositAmount = DEPOSIT_AMOUNT;
-        uint256 expectedFee = depositAmount / 100; // 1%
-
-        uint256 treasuryBalanceBefore = usdc.balanceOf(treasury);
-
-        vm.startPrank(user1);
-        usdc.approve(address(vault), depositAmount);
-        vault.deposit(depositAmount, user1);
-        vm.stopPrank();
-
-        uint256 treasuryBalanceAfter = usdc.balanceOf(treasury);
-
-        assertEq(
-            treasuryBalanceAfter - treasuryBalanceBefore,
-            expectedFee,
-            "Treasury should receive entry fee"
-        );
     }
 
     function test_Deposit_HandlesMultipleDeposits() public {
@@ -238,13 +222,25 @@ contract DeltaNeutralVaultTest is Test {
         assertEq(totalAssets, amount1 + amount2, "Total assets should be sum of deposits");
     }
 
+    /// Regressão: o primeiro depósito recebia 0 shares porque as shares eram calculadas
+    /// depois de os USDC entrarem no saldo do vault.
+    function test_Deposit_FirstDepositorGetsFairShares() public {
+        vm.startPrank(user1);
+        usdc.approve(address(vault), DEPOSIT_AMOUNT);
+        uint256 shares = vault.deposit(DEPOSIT_AMOUNT, user1);
+        vm.stopPrank();
+
+        assertEq(shares, DEPOSIT_AMOUNT, "1:1 no primeiro deposito");
+        assertEq(vault.convertToAssets(shares), DEPOSIT_AMOUNT, "shares valem o que foi depositado");
+    }
+
     function test_Deposit_RevertsWhenPaused() public {
         vault.pause();
 
         vm.startPrank(user1);
         usdc.approve(address(vault), DEPOSIT_AMOUNT);
 
-        vm.expectRevert("Pausable: paused");
+        vm.expectRevert(Pausable.EnforcedPause.selector); // OpenZeppelin 5: erro customizado
         vault.deposit(DEPOSIT_AMOUNT, user1);
         vm.stopPrank();
     }
@@ -271,29 +267,10 @@ contract DeltaNeutralVaultTest is Test {
         assertGt(balanceAfter, balanceBefore, "User should receive USDC");
     }
 
-    function test_Withdraw_ChargesExitFee() public {
-        // Set 1% exit fee
+    /// Exit fee é fixa em 0% por design (setFees rejeita qualquer outro valor).
+    function test_Withdraw_ExitFeeIsFixedAtZero() public {
+        vm.expectRevert("DeltaNeutralVault: exit fee must be 0%");
         vault.setFees(0, 0, 0, 100, 0, 0);
-
-        // Deposit
-        vm.startPrank(user1);
-        usdc.approve(address(vault), DEPOSIT_AMOUNT);
-        uint256 shares = vault.deposit(DEPOSIT_AMOUNT, user1);
-        vm.stopPrank();
-
-        uint256 treasuryBalanceBefore = usdc.balanceOf(treasury);
-
-        // Withdraw
-        vm.prank(user1);
-        vault.redeem(shares, user1, user1);
-
-        uint256 treasuryBalanceAfter = usdc.balanceOf(treasury);
-
-        assertGt(
-            treasuryBalanceAfter - treasuryBalanceBefore,
-            0,
-            "Treasury should receive exit fee"
-        );
     }
 
     // ============================================
@@ -423,12 +400,12 @@ contract DeltaNeutralVaultTest is Test {
         uint16 keeperFee
     ) public {
         // Limitar fees aos valores máximos permitidos
-        performanceFee = uint16(bound(performanceFee, 0, 5000));  // max 50%
+        performanceFee = uint16(bound(performanceFee, 0, 1500));  // max 15%
         managementFee = uint16(bound(managementFee, 0, 1000));    // max 10%
-        entryFee = uint16(bound(entryFee, 0, 1000));
-        exitFee = uint16(bound(exitFee, 0, 1000));
+        entryFee = 0; // fixa em 0% por design
+        exitFee = 0;  // fixa em 0% por design
         swapFee = uint16(bound(swapFee, 0, 1000));
-        keeperFee = uint16(bound(keeperFee, 0, 1000));
+        keeperFee = uint16(bound(keeperFee, 0, 500));      // max 5%
 
         // Should NOT revert se dentro dos limites
         vault.setFees(

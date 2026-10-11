@@ -12,3 +12,8 @@ artifacts
 # IDE
 .vscode
 .idea
+
+# Foundry
+out/
+cache_forge/
+broadcast/*/31337/
